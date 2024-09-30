@@ -1,6 +1,6 @@
 const User = require('../models/userModel');
-
-const createUser = async (req, res) => {
+const asyncHandler = require("express-async-handler")
+const createUser = asyncHandler(async (req, res) => {
     const { firstName, lastName, email, mobile, password } = req.body;
     if (!firstName || !lastName || !email || !mobile || !password) {
               return res.status(400).send("Missing required fields: tel, email, or address");
@@ -12,10 +12,7 @@ const createUser = async (req, res) => {
 
     }
     else { 
-        res.json({
-            msg: "User already exist",
-            status: "failed"
-        })
+        throw new Error("User Already Exists");
     }
-}
+})
 module.exports = {createUser};
