@@ -1,11 +1,7 @@
 const { default: mongoose } = require("mongoose");
  async function dbConnect() {
     try {
-        const conn = await mongoose.connect(process.env.MONGO_URL, {
-             useNewUrlParser: true,
-            useUnifiedTopology: true,
-            
-        }) ;
+        const conn = await mongoose.connect(process.env.MONGO_URL);
         // console.log(conn);
         console.log("Database connected successfully");
     }
