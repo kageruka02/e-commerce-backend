@@ -27,12 +27,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "user"
     },
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
     cart: {
     type: Array,
         default: [],
     },
-    address: [{ type: ObjectId, ref: "Address" }],
-    wishlist: [{type: ObjectId, ref: "Product"}],
+    address: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+    refreshToken: {
+        type: String,
+    },
 }, { timestamps: true }) // this puts the createdAt and updatedtAt
 
 userSchema.pre('save', async function (next) {

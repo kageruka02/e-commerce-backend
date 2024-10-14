@@ -20,4 +20,10 @@ function vectorAffinity(xs, ys) {
 // console.log(vectorAffinity([null], [])); // Expected: 0
 // console.log(vectorAffinity([null], [null])); // Expected: 1
 // console.log(vectorAffinity([null], [null, null])); // Expected: 1/2
-console.log(vectorAffinity([], [])); // Expected: 1
+// console.log(vectorAffinity([], [])); // Expected: 1
+
+
+
+
+
+// Estimating amounts of subsets
