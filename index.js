@@ -6,8 +6,11 @@ const dotenv = require('dotenv').config();
 const PORT = process.env.PORT || 4000;
 const authRouter = require('./routes/authRoute');
 const productRouter = require('./routes/productRoute');
-const cookieParser = require('cookie-parser')
-const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
+const morgan = require("morgan");
+
+
+
 async function startServer() {
     try {
         await dbConnect();
@@ -24,7 +27,7 @@ app.listen(PORT, () => {
         console.error("Failed to start server: ", error);
     }
 }
-
+app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/api/user', authRouter);

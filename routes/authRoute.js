@@ -10,7 +10,7 @@ router.get('/allUsers', getAllUsers);
 router.get('/refresh', handleRequestToken);
 router.get('/logout', logout);
 router.get('/:id',authMiddleWare,isAdmin, getUser);
-router.delete('/:id', deleteUser);
+router.delete('/:id',authMiddleWare, isAdmin,  deleteUser);
 router.patch('/edit-user', authMiddleWare, updateUser);
 router.put('/block-user/:id', authMiddleWare, isAdmin, blockUser);
 router.put('/unblock-user/:id', authMiddleWare, isAdmin, unblockUser);

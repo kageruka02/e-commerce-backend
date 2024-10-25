@@ -21,12 +21,12 @@ let productSchema = new mongoose.Schema({
         required: true,
     },
     category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category"
+        type: String,
+        required: true
     },
     brand: {
         type: String,
-        enum: ["Apple", "Samsung", "Lenovo"]
+        required: true
         
     },
     quantity: {
@@ -44,7 +44,7 @@ let productSchema = new mongoose.Schema({
     }, 
     color: {
         type: String,
-        enum: ['Black', 'Brown', "Red"]
+        required: true
     },
     ratings: [{
         default: [],
@@ -56,7 +56,7 @@ let productSchema = new mongoose.Schema({
         postedBy: {type: mongoose.Schema.Types.ObjectId, ref: "User"}
     }],
     updatedBy: {
-        type: mongoose.SchemaTypes.ObjectId, ref: "User" 
+        type: mongoose.SchemaTypes.ObjectId, ref: "User"
 
     },
     updateHistory: [
@@ -70,7 +70,7 @@ let productSchema = new mongoose.Schema({
                 default: () => Date.now()
             },
             changes: {
-                type: Map,
+                type: Object,
                 of: {
                     old: mongoose.SchemaTypes.Mixed,
                     new: mongoose.SchemaTypes.Mixed
@@ -100,6 +100,42 @@ productSchema.pre('save', function (next) {
         })
     }
         
+    }
+   
+    next();
+})
+productSchema.pre('findOneAndUpdate', async function (next) {
+    const query = this;
+    const updated = query.getUpdate() // this returns only the update ones and it is an object;
+    console.log(updated);
+    const oldProduct = await query.model.findOne(query.getQuery());
+    let changes = {}
+
+    if (Object.keys(updated).length > 0) {
+        
+        Object.keys(updated).forEach((field) => {
+            const exclude = ["$set", "$setOnInsert"]
+            if (JSON.stringify(oldProduct[field]) !== JSON.stringify(updated[field]) && !exclude.includes(field)) {
+                changes[field] = {
+                    old: oldProduct[field],
+                    new: updated[field]
+                }
+                
+            }
+        } )
+        
+         if (Object.keys(changes).length > 0) {
+        await query.model.updateOne(query.getQuery(), {
+            $push: {
+                updateHistory: {
+                    updatedAt: Date.now(),
+                    changes
+                
+            }
+            }
+        })
+        
+    }
     }
    
     next();
