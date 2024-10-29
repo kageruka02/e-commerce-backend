@@ -6,6 +6,11 @@ let productSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        immutable: true
+    },
     slug: {
         type: String,
         required: true,
@@ -114,7 +119,7 @@ productSchema.pre('findOneAndUpdate', async function (next) {
     if (Object.keys(updated).length > 0) {
         
         Object.keys(updated).forEach((field) => {
-            const exclude = ["$set", "$setOnInsert"]
+            const exclude = ["$set", "$setOnInsert", "updatedBy"]
             if (JSON.stringify(oldProduct[field]) !== JSON.stringify(updated[field]) && !exclude.includes(field)) {
                 changes[field] = {
                     old: oldProduct[field],
@@ -129,6 +134,7 @@ productSchema.pre('findOneAndUpdate', async function (next) {
             $push: {
                 updateHistory: {
                     updatedAt: Date.now(),
+                    updatedBy: updated['updatedBy'],
                     changes
                 
             }

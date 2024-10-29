@@ -1,6 +1,7 @@
 const Product = require('../models/productModel');
 const asyncHandler = require('express-async-handler');
 const slugify = require("slugify");
+const { all } = require('../routes/authRoute');
 
 
 const createProduct = asyncHandler(async(req, res) => {
@@ -21,7 +22,7 @@ const createProduct = asyncHandler(async(req, res) => {
             slug = slugify(title);
         }
         const newProduct = await Product.create({
-        title, slug, description, category, brand, quantity, images, color, ratings, price
+        title, slug, description, category, brand, quantity, images, color, ratings, price, createdBy : req.user.id 
         })
         res.json(newProduct);
     }
@@ -43,9 +44,52 @@ const getProduct = asyncHandler(async (req, res) => {
 })
 
 const getAllProducts = asyncHandler(async (req, res) => {
+   
     try {
-        allProducts = await Product.find();
-        res.json(allProducts);
+        //filtering
+        const queryObj = { ...req.query }
+        console.log(queryObj);
+        const excludeObjects = ["sort", "limit", "page", "fields"];
+        excludeObjects.forEach((element) => delete queryObj[element]);
+        let queryString = JSON.stringify(queryObj);
+        queryString = queryString.replace(/\b(lt|lte|gt|gte)\b/g, (e) => `$${e}`);
+        let query = Product.find(JSON.parse(queryString));
+       
+
+        //sorting
+        if (req.query.sort) {
+            const sortBy = req.query.sort.split(',').join(' ');
+            console.log(sortBy);
+            query = query.sort(sortBy);
+            
+        }
+        else {
+            query.sort('createdAt');
+        }
+        
+        
+        // limiting the fields
+        if (req.query.fields) {
+            const fields = req.query.fields.split(',').join(' ');
+            console.log(fields);
+            query = query.select(fields);
+        }
+
+        //pagination
+        const page = req.query.page;
+        const limit = req.query.limit;
+        const skip = (page - 1) * limit;
+        query.skip(skip).limit(limit);
+        if (req.query.page) {
+            const productCount = await Product.countDocuments();
+            if (skip >= productCount) {
+                throw new Error("This page does not exist");
+            }
+        }
+        console.log(page, limit, skip);
+        query = await query;
+        res.json(query)
+
     }
     catch (error) {
         throw new Error(error)
@@ -58,7 +102,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
     try {
         const allowed = isAllowed(req.body);
-        allowed[updatedBy] = req.user?.id;
+        allowed.updatedBy = req.user?.id;
         const userFound = await Product.findByIdAndUpdate(id, allowed, {new: true}
         );
         res.json(userFound)
