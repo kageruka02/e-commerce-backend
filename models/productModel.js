@@ -87,7 +87,7 @@ let productSchema = new mongoose.Schema({
     ]
 }, { timestamps: true })
 productSchema.pre('save', function (next) {
-    product = this;
+    const product = this;
     if (!product.isNew) {
          changes = {};
     product.modifiedPaths().forEach((field) => {

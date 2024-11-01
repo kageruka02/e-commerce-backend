@@ -35,4 +35,4 @@ app.use('/api/product', productRouter);
 
 app.use(notFound);
 app.use(errorHandler);
- startServer();
+startServer();
