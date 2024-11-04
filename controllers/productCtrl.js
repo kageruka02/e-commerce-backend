@@ -60,7 +60,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
         if (req.query.sort) {
             const sortBy = req.query.sort.split(',').join(' ');
             console.log(sortBy);
-            query = query.sort(sortBy);
+            query = query.sort(sortBy); // sort what was found from find
             
         }
         else {
