@@ -1,7 +1,9 @@
 const Product = require('../models/productModel');
 const asyncHandler = require('express-async-handler');
 const slugify = require("slugify");
-const { all } = require('../routes/authRoute');
+const User = require('../models/userModel');
+const validateMongoDbId = require('../utils/validateMongodbId');
+// const { all } = require('../routes/authRoute');
 
 
 const createProduct = asyncHandler(async(req, res) => {
@@ -136,6 +138,38 @@ function isAllowed(body) {
     return body;
 }
 
+const addtoWishList = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    const { productId } = req.body;
+    validateMongoDbId(productId);
+    try {
+        const user = await User.findById(_id);
+        const alreadyAdded = user.wishlist.find((id) => id.toString() === productId.toString());
+        console.log(alreadyAdded);
+        if (alreadyAdded) {
+            let user = await User.findByIdAndUpdate(_id, {
+                $pull: {wishlist: productId}
+            }, { new: true })
+            res.json(user);
+        }
+        else {
+            console.log("okay");
+            let user = await User.findByIdAndUpdate(_id, {
+                $push: {wishlist:productId}
+            }, { new: true })
+            res.json(user);
+        }
+
+    }
+    catch (error) {
+        throw new Error(error);
+    }
+
+})
+
+const rating = asyncHandler(async (req, res) => {
+    
+})
 
 
 
@@ -148,4 +182,4 @@ function isAllowed(body) {
 
 
 
-module.exports = {createProduct, getProduct, getAllProducts, updateProduct, deleteProduct};
+module.exports = {createProduct, getProduct, getAllProducts, updateProduct, deleteProduct, addtoWishList, rating};

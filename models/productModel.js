@@ -60,6 +60,10 @@ let productSchema = new mongoose.Schema({
         },
         postedBy: {type: mongoose.Schema.Types.ObjectId, ref: "User"}
     }],
+    totalratings: {
+        type: String,
+        default: 0
+    },
     updatedBy: {
         type: mongoose.SchemaTypes.ObjectId, ref: "User"
 
