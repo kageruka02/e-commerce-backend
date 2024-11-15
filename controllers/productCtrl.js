@@ -128,7 +128,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 })
 
 function isAllowed(body) {
-    const disallowed = ['updatedBy', "updateHistory", 'createdAt'];
+    const disallowed = ['updatedBy', "updateHistory", 'createdAt', 'totalratings'];
     const allowed = Object.keys(body);
     for (const key of allowed) {
         if (disallowed.includes(key)) {
@@ -168,6 +168,54 @@ const addtoWishList = asyncHandler(async (req, res) => {
 })
 
 const rating = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    const { star, productId, comment } = req.body;
+    try {
+        const product = await Product.findById(productId);
+    const alreadyRated = product.ratings.find((postRating) => postRating.postedBy.toString() === _id.toString());
+    if (alreadyRated) {
+
+        const updatedRating = await Product.updateOne({
+            ratings: { $elemMatch: alreadyRated},
+        },
+            {
+                $set: {
+                    "ratings.$.star": star,
+                    "ratings.$.comment": comment
+                 },
+            }, { new: true })
+   
+
+        
+    }
+    else {
+        const ratedProduct = await Product.findByIdAndUpdate(productId, {
+            $push: {
+                ratings: {
+                    comment: comment,
+                    star: star,
+                    postedBy: _id
+                }
+            }
+        }, { new: true }
+        );
+       
+    }
+    //update the whole ratings average
+    const productRate = await Product.findById(productId);
+    const totalRaters = productRate.ratings.length;
+    const ratingSum = productRate.ratings.map((item) => item.star).reduce((total, a) => a + total, total = 0);
+    const actualRating = Math.round(ratingSum / totalRaters);
+    productRate.totalratings = actualRating.toString();
+    const finalProduct = await productRate.save();
+    res.json(finalProduct);
+        
+    }
+    catch (error) {
+        throw new Error(error);
+    }
+    
+
     
 })
 

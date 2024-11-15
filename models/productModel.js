@@ -52,13 +52,14 @@ let productSchema = new mongoose.Schema({
         required: true
     },
     ratings: [{
-        default: [],
         star: {
             type: Number,
             min: 1,
             max: 5,
+
         },
-        postedBy: {type: mongoose.Schema.Types.ObjectId, ref: "User"}
+        comment: String,
+        postedBy: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true}
     }],
     totalratings: {
         type: String,
@@ -90,64 +91,65 @@ let productSchema = new mongoose.Schema({
         }
     ]
 }, { timestamps: true })
-productSchema.pre('save', function (next) {
-    const product = this;
-    if (!product.isNew) {
-         changes = {};
-    product.modifiedPaths().forEach((field) => {
-        changes[field] =  {
-            old: product.get(field, null, { getters: false }),
-            new: product[field]
-        }
-    });
-    if (Object.keys(changes).length > 0) {
-        product.updateHistory.push({
-            updateBy: product.updateBy,
-            updatedAt: Date.now(),
-            changes
 
-        })
-    }
-        
-    }
-   
-    next();
-})
-productSchema.pre('findOneAndUpdate', async function (next) {
-    const query = this;
-    const updated = query.getUpdate() // this returns only the update ones and it is an object;
-    console.log(updated);
-    const oldProduct = await query.model.findOne(query.getQuery());
-    let changes = {}
+// productSchema.pre('save', function (next) {
+//     const product = this;
+//     if (!product.isNew) {
+//          changes = {};
+//     product.modifiedPaths().forEach((field) => {
+//         changes[field] =  {
+//             old: product.get(field, null, { getters: false }),
+//             new: product[field]
+//         }
+//     });
+//     if (Object.keys(changes).length > 0) {
+//         product.updateHistory.push({
+//             updateBy: product.updateBy,
+//             updatedAt: Date.now(),
+//             changes
 
-    if (Object.keys(updated).length > 0) {
+//         })
+//     }
         
-        Object.keys(updated).forEach((field) => {
-            const exclude = ["$set", "$setOnInsert", "updatedBy"]
-            if (JSON.stringify(oldProduct[field]) !== JSON.stringify(updated[field]) && !exclude.includes(field)) {
-                changes[field] = {
-                    old: oldProduct[field],
-                    new: updated[field]
-                }
-                
-            }
-        } )
-        
-         if (Object.keys(changes).length > 0) {
-        await query.model.updateOne(query.getQuery(), {
-            $push: {
-                updateHistory: {
-                    updatedAt: Date.now(),
-                    updatedBy: updated['updatedBy'],
-                    changes
-                
-            }
-            }
-        })
-        
-    }
-    }
+//     }
    
-    next();
-})
+//     next();
+// })
+// productSchema.pre('findOneAndUpdate', async function (next) {
+//     const query = this;
+//     const updated = query.getUpdate() // this returns only the update ones and it is an object;
+//     console.log(updated);
+//     const oldProduct = await query.model.findOne(query.getQuery());
+//     let changes = {}
+
+//     if (Object.keys(updated).length > 0) {
+        
+//         Object.keys(updated).forEach((field) => {
+//             const exclude = ["$set", "$setOnInsert", "updatedBy"]
+//             if (JSON.stringify(oldProduct[field]) !== JSON.stringify(updated[field]) && !exclude.includes(field)) {
+//                 changes[field] = {
+//                     old: oldProduct[field],
+//                     new: updated[field]
+//                 }
+                
+//             }
+//         } )
+        
+//          if (Object.keys(changes).length > 0) {
+//         await query.model.updateOne(query.getQuery(), {
+//             $push: {
+//                 updateHistory: {
+//                     updatedAt: Date.now(),
+//                     updatedBy: updated['updatedBy'],
+//                     changes
+                
+//             }
+//             }
+//         })
+        
+//     }
+//     }
+   
+//     next();
+// })
 module.exports = mongoose.model("Product", productSchema )
