@@ -9,13 +9,13 @@ const crypto = require('crypto');
 
 //create a user
 const createUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, mobile, password } = req.body;
+    const { firstName, lastName, email, mobile, password, role } = req.body;
     if (!firstName || !lastName || !email || !mobile || !password) {
               return res.status(400).send("Missing required fields: tel, email, or address");
     }
     const findUser = await User.findOne({ email });
     if (!findUser) {
-        const newUser =  await User.create({ firstName, lastName, email, mobile, password });
+        const newUser =  await User.create({ firstName, lastName, email, mobile, password, role });
         res.json(newUser)
 
     }
