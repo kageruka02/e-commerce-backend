@@ -3,7 +3,10 @@ const asyncHandler = require('express-async-handler');
 const slugify = require("slugify");
 const User = require('../models/userModel');
 const validateMongoDbId = require('../utils/validateMongodbId');
-// const { all } = require('../routes/authRoute');
+const cloudinaryUploadImg = require('../utils/cloudinary');
+const { hashFile } = require('../middlewares/uploadimage');
+const fs = require('fs');
+
 
 
 const createProduct = asyncHandler(async(req, res) => {
@@ -55,7 +58,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
         excludeObjects.forEach((element) => delete queryObj[element]);
         let queryString = JSON.stringify(queryObj);
         queryString = queryString.replace(/\b(lt|lte|gt|gte)\b/g, (e) => `$${e}`);
-        let query = Product.find(JSON.parse(queryString));
+        let query = Product.find(JSON.parse(queryString)); // JSON.parse return it from string to it 's original form
        
 
         //sorting
@@ -166,7 +169,7 @@ const addtoWishList = asyncHandler(async (req, res) => {
     }
 
 })
-
+//user rating the product
 const rating = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     const { star, productId, comment } = req.body;
@@ -219,6 +222,51 @@ const rating = asyncHandler(async (req, res) => {
     
 })
 
+const logUploadedImg = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDbId(id);
+    try {
+        const uploader = (path) => cloudinaryUploadImg(path, "images");
+        const urls = [];
+        const files = req.files;
+        console.log(req.files);
+        // console.log(files + "is good");
+        for (const file of files) {
+            const { path } = file;
+            console.log(path);
+            const hashedFile = await hashFile(path);
+            console.log(hashedFile)
+             console.log("is good");
+            const newPath =  await  uploader(path);
+            console.log(newPath);
+           
+            
+            urls.push({
+                "localHash": hashedFile,
+                "imagesUrl": newPath.url 
+            });
+            fs.unlinkSync(path)
+        }
+
+        const findProduct = await Product.findByIdAndUpdate(id, {
+            $push: {
+            images: {
+                $each: urls.map((file) =>  file)
+            },
+
+            },
+        }, { new: true });
+        res.json(findProduct);
+
+
+        
+    }
+    catch (error) {
+        console.error(error);
+        throw new Error(JSON.stringify(error));
+    }
+   
+}) 
 
 
 
@@ -230,4 +278,4 @@ const rating = asyncHandler(async (req, res) => {
 
 
 
-module.exports = {createProduct, getProduct, getAllProducts, updateProduct, deleteProduct, addtoWishList, rating};
+module.exports = {createProduct, getProduct, getAllProducts, updateProduct, deleteProduct, addtoWishList, rating, logUploadedImg};

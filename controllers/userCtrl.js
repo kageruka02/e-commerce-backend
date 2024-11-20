@@ -6,6 +6,11 @@ const { generateRefreshToken } = require('../config/refreshToken');
 const  jwt  = require('jsonwebtoken');
 const { sendEmail } = require('./emailController');
 const crypto = require('crypto');
+const Product = require('../models/productModel');
+const Cart = require('../models/cartModel');
+const mongoose = require('mongoose');
+
+
 
 //create a user
 const createUser = asyncHandler(async (req, res) => {
@@ -214,6 +219,7 @@ const unblockUser = asyncHandler(async (req, res) => {
     }
 })
  
+//the user changing his own password when he  knows the last one
 const updatePassword = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     const { password } = req.body;
@@ -230,6 +236,7 @@ const updatePassword = asyncHandler(async (req, res) => {
     }
 })
 
+//generate password token
 const forgotPasswordToken = asyncHandler(async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -258,6 +265,7 @@ const forgotPasswordToken = asyncHandler(async (req, res) => {
     
 }) 
 
+//reset password after the generated token
 const resetPassword = asyncHandler(async (req, res) => {
     const { password } = req.body;
     const { token } = req.params;
@@ -277,4 +285,105 @@ const resetPassword = asyncHandler(async (req, res) => {
     
 })
 
-module.exports = {createUser, login, getAllUsers, getUser, deleteUser, updateUser, blockUser, unblockUser, handleRequestToken, logout, updatePassword, forgotPasswordToken, resetPassword};
+// admin login
+const loginAdmin = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    console.log("logging in");
+    const findAdmin = await User.findOne({ email });
+    if (findAdmin.role !== 'admin') throw new Error("Not authorized");
+    if (findAdmin && await findAdmin.isPasswordMatching(password)) {
+        const refreshToken =  generateRefreshToken(findAdmin?._id);
+        const updateUser = await User.findByIdAndUpdate(findAdmin._id, {
+            refreshToken: refreshToken,
+        }, { new: true });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 72 * 60 * 60 * 1000,
+            SameSite: 'lax',
+        })
+       res.json({_id: findAdmin._id, 
+            firstName: findAdmin.firstName,
+            lastName: findAdmin.lastName,
+            email: findAdmin.email,
+           mobile: findAdmin.mobile,
+           token: generateToken(findAdmin._id)
+       })
+    }
+    else {
+        throw new Error("Invalid Credentials");
+    }
+
+})
+
+//get wishlist
+
+const getWishlist = asyncHandler(async (req, res) => {
+    try {
+        const { _id } = req.user;
+        const user = await User.findById(_id).populate('wishlist');
+        res.json(user['wishlist']);
+        
+        
+    }
+    catch (error) {
+        throw new Error(error)
+    }
+   
+
+})
+
+const saveAddress = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+    try {
+        const updatedUser = await User.findByIdAndUpdate(_id, {
+            address: req?.body?.address
+        }, { new: true })
+        res.json(updatedUser);
+    }
+    catch (error) {
+        throw new Error(error)
+    }
+})
+ 
+const userCart = asyncHandler(async (req, res) => {
+    const { cart } = req.body;
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+    try {
+        const user = User.findById(_id);
+        const products = [];
+        //check if user already have product in cart
+        const alreadyExistCart = await Cart.findOne({ "orderedBy": _id })
+        if (alreadyExistCart) {
+            console.log("it already exists");
+        }
+        for (let i = 0; i < cart.length; i++){
+            let object = {};
+            console.log(cart);
+            console.log(typeof(cart[i].productId));
+            object.product = cart[i].productId;
+            object.count = cart[i].count;
+            object.color = cart[i].color;
+            let getPrice = await Product.findById(cart[i].productId).select("price").exec();
+            console.log(getPrice);
+         
+            object.price = getPrice.price;
+            products.push(object);
+        }
+        console.log(products);
+        const cartTotal = products.reduce((total, product) => total + (product.price * product.count), total = 0);
+        const newCart = await new Cart({
+            products,
+            cartTotal,
+            "orderedBy": _id
+            
+        }).save();
+        res.json(newCart);
+    }
+    catch (error) {
+        throw new Error(error);
+    }
+})
+
+module.exports = {createUser, login, getAllUsers, getUser, deleteUser, updateUser, blockUser, unblockUser, handleRequestToken, logout, updatePassword, forgotPasswordToken, resetPassword, loginAdmin, getWishlist, saveAddress, userCart};

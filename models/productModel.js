@@ -44,9 +44,11 @@ let productSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    images: {
-        type: Array,
-    }, 
+    images: [{ // this url are cloudinary urls
+        localHash: String,
+        imagesUrl: String
+
+    }], 
     color: {
         type: String,
         required: true
