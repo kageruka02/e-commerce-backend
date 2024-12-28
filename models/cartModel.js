@@ -15,10 +15,12 @@ const cartSchema = new mongoose.Schema({
             required: true
         }
     }], 
+    cartTotal: Number,
     totalAfterDiscount: Number,
     orderedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+        unique: true
     }
 }, { timestamps: true })
 

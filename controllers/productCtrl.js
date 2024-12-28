@@ -41,7 +41,7 @@ const getProduct = asyncHandler(async (req, res) => {
     const{id} = req.params
     try {
         const findProduct = await Product.findById(id);
-        res.json({ product : findProduct.id  });
+        res.json({ findProduct });
     }
     catch (error) {
         throw new Error(error);

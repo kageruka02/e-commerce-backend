@@ -46,7 +46,8 @@ let productSchema = new mongoose.Schema({
     },
     images: [{ // this url are cloudinary urls
         localHash: String,
-        imagesUrl: String
+        imagesUrl: String,
+        _id: false
 
     }], 
     color: {
