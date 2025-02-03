@@ -22,11 +22,11 @@ const createUser = asyncHandler(async (req, res) => {
     const findUser = await User.findOne({ email });
     if (!findUser) {
         const newUser =  await User.create({ firstName, lastName, email, mobile, password, role });
-        res.json(newUser)
+        res.status(201).json({ "firstName": newUser.firstName, "lastName": newUser.lastName, "email":newUser.email, "mobile": newUser.mobile})
 
     }
     else { 
-        throw new Error("User Already Exists");
+        return res.status(409).send({ "message":"User already exists"});
     }
 })
 // login a user
@@ -44,7 +44,7 @@ const login = asyncHandler(async (req, res) => {
             maxAge: 72 * 60 * 60 * 1000,
             SameSite: 'lax',
         })
-       res.json({_id: user._id, 
+       res.status(200).json({_id: user._id, 
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
@@ -53,6 +53,7 @@ const login = asyncHandler(async (req, res) => {
        })
     }
     else {
+        res.status(400);
         throw new Error("Invalid Credentials");
     }
 
@@ -62,22 +63,24 @@ const login = asyncHandler(async (req, res) => {
 const handleRequestToken = asyncHandler(async(req, res) => {
     const cookie = req.cookies;
     if (!cookie.refreshToken) {
+        res.status(400)
         throw new Error("No refresh token in cookies");
     }
     const refreshToken = cookie.refreshToken;
     const user = await User.findOne({ refreshToken })
     if (!user) {
+        res.status(400)
         throw new Error("No refresh token present in db or not matched")
     }
     jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
         if (err || decoded.id !== user.id) {
-            
+            res.status(401)
                    throw new Error("There is something wrong with refresh token");
             
          
         }
         const accessToken = generateToken(user?._id);
-        res.json({accessToken})
+        res.status(200).json({accessToken})
     })
     
 })
@@ -86,6 +89,7 @@ const handleRequestToken = asyncHandler(async(req, res) => {
 const logout = asyncHandler(async (req, res) => {
     const cookie = req.cookies;
     if (!cookie.refreshToken) {
+        res.status(400);
         throw new Error("No refresh token in cookies");
     }
     const refreshToken = cookie.refreshToken;
@@ -95,7 +99,7 @@ const logout = asyncHandler(async (req, res) => {
             httpOnly: true,
             secure: true,
         })
-        return res.sendStatus(204) // forbidden
+        return res.status(404).json({ error: "Refresh token not found in the database" });
     }
     user.refreshToken = '';
     await user.save();
@@ -109,9 +113,11 @@ const logout = asyncHandler(async (req, res) => {
 
 // get all users
 const getAllUsers = asyncHandler(async(req, res) => {
-    try {
+    try { 
+        const { _id } = req.user;
+        validateMongoDbId(_id);
         const getUsers = await User.find();
-        res.json({getUsers})
+        res.status(200).json({getUsers})
 
         
     }
@@ -126,23 +132,34 @@ const getUser = asyncHandler(async (req, res) => {
     validateMongoDbId(id)
     const getUser = await User.findOne({ _id : id });
     if (!getUser) {
+        res.status(404)
         throw new Error("The user does not exist");
     }
-    res.json(getUser);
+    res.status(200).json(getUser);
 })
 
 // delete a single user
 const deleteUser = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id);
     const { id } = req.params;
     validateMongoDbId(id);
     
     
     try {
-        const deleteUser = await User.deleteOne({ _id: id });
-        res.json({ deleteUser });
+        const deletedUser = await User.findByIdAndDelete(id);
+
+        if (!deletedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User deleted successfully",
+            deletedUser
+        });
     }
     catch (error) {
-         throw new Error("The user does not exist");
+         throw new Error("internal server Error");
     }
     
 })
@@ -156,6 +173,7 @@ const updateUser = asyncHandler(async (req, res) => {
     try {
         const user = await User.findById(_id);
         if (!user) {
+            res.status(404)
             throw new Error("the user do not exist")
         }
         const allowedUpdates = ['firstName', 'lastName', 'email', 'mobile']
@@ -163,16 +181,17 @@ const updateUser = asyncHandler(async (req, res) => {
         allowedUpdates.forEach(function (key) {
             if (req.body[key] !== user[key]) {
                 isUpdated = true;
-                // console.log(key);
                 user[key] = req.body[key];
             }
         })
+        
         if (isUpdated) {
             const updateUser = await user.save();
-        res.json({updateUser}) 
+            console.log("where is exactly error");
+        res.status(200).json({"firstName":updatedUser.firstName, "lastName": updateUser.lastName, "email": updateUser.email, "mobile": updateUser.mobile}) 
         }
         else {
-            res.json({ 'message': "nothing to update"})
+            res.status(400).json({ 'message': "nothing to update"})
         }
         
 
@@ -194,7 +213,7 @@ const blockUser = asyncHandler(async (req, res) => {
         }
         user["isBlocked"] = true;
         user.save();
-        res.json({ "message": "user Blocked" });
+        res.status(200).json({ "message": "user Blocked" });
     }
     catch (error) {
         throw new Error(error);
@@ -213,7 +232,7 @@ const unblockUser = asyncHandler(async (req, res) => {
         }
         user["isBlocked"] = false;
         user.save();
-        res.json({"message": "User unblocked"});
+        res.status(200).json({"message": "User unblocked"});
     }
     catch (error) {
         throw new Error(error);
@@ -224,17 +243,26 @@ const unblockUser = asyncHandler(async (req, res) => {
 const updatePassword = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     const { password } = req.body;
-    const user = await User.findById(_id);
-    if (user.isPasswordMatching(password)) {
-      res.json({"message" : "the password is not changing"})
+    try {
+        const user = await User.findById(_id);
+     if (!user) {
+            return res.status(404).json({ "message": "User not found" });
+        }
+    if (await user.isPasswordMatching(password)) {
+      res.status(400).json({"message" : "the password is not changing"})
     }
 
     if (password) {
         user.password = password;
         const updatedPasswordUser = await user.save();
         console.log(updatedPasswordUser);
-        res.json(updatedPasswordUser);
+        res.status(200).json(updatedPasswordUser);
     }
+    }
+    catch (error) {
+        throw new Error("Failed to update password", error);
+    }
+    
 })
 
 //generate password token
@@ -242,6 +270,7 @@ const forgotPasswordToken = asyncHandler(async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
+        res.status(404)
         throw new Error("User not found");
     }
     try {
@@ -276,13 +305,14 @@ const resetPassword = asyncHandler(async (req, res) => {
         passwordResetExpires: {$gt : Date.now()}
     })
     if (!user) {
+        res.status(401)
         throw new Error(" Token expired, please try again later");
     }
     user.password = password;
     user.passwordResetExpires = undefined;
     user.passwordResetToken = undefined;
     await user.save();
-    res.json(user);
+    res.status(200).json({ "firstName": user.firstName, "lastName": user.lastName, "email":user.email, "mobile": user.mobile});
     
 })
 
@@ -302,7 +332,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
             maxAge: 72 * 60 * 60 * 1000,
             SameSite: 'lax',
         })
-       res.json({_id: findAdmin._id, 
+       res.status(200).json({_id: findAdmin._id, 
             firstName: findAdmin.firstName,
             lastName: findAdmin.lastName,
             email: findAdmin.email,
@@ -311,6 +341,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
        })
     }
     else {
+        res.status(401)
         throw new Error("Invalid Credentials");
     }
 
@@ -320,9 +351,15 @@ const loginAdmin = asyncHandler(async (req, res) => {
 
 const getWishlist = asyncHandler(async (req, res) => {
     try {
+        console.log("hello")
         const { _id } = req.user;
+        
+        if (!_id) {
+            res.status(401)
+            throw new Error("There is no token attacked to the header")
+        }
         const user = await User.findById(_id).populate('wishlist');
-        res.json(user['wishlist']);
+        res.status(200).json(user['wishlist']);
         
         
     }
@@ -340,7 +377,7 @@ const saveAddress = asyncHandler(async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(_id, {
             address: req?.body?.address
         }, { new: true })
-        res.json(updatedUser);
+        res.status(200).json(updatedUser);
     }
     catch (error) {
         throw new Error(error)
@@ -363,9 +400,10 @@ const userCart = asyncHandler(async (req, res) => {
             object.product = cart[i].productId;
             
             object.color = cart[i].color;
-           let getPriceAndCount = await Product.findById(cart[i].productId).select("price count").exec();
+           let getPriceAndCount = await Product.findById(cart[i].productId).select("price quantity").exec();
 
-            if (getPriceAndCount.count < cart[i].count) {
+            if (getPriceAndCount.quantity < cart[i].count) {
+                res.status(409)
             throw new Error("The quantity is not available");
             } else {
             object.count = cart[i].count;
@@ -379,10 +417,10 @@ const userCart = asyncHandler(async (req, res) => {
             //  console.log(usualProducts);
             products.forEach((product) => {
                 const contains = usualProducts.filter((p) => p.product.toString() === product.product.toString());
-                if (contains.length === 0) {
+                if (contains.length === 0) { //add product which is not usually there
                     usualProducts.push(product);
                 }
-                else {
+                else {//if the product is on the products we update
                     const index = usualProducts.findIndex((cartItem) => cartItem.product.toString() === product.product.toString());
                     usualProducts[index] = product; 
                     
@@ -396,7 +434,7 @@ const userCart = asyncHandler(async (req, res) => {
                 cartTotal,
                 totalAfterDiscount: cartTotal
             }, {new: true})
-            res.json(newCart);
+            res.status(200).json(newCart);
 
         }
         else { // it does not exist we create
@@ -408,7 +446,7 @@ const userCart = asyncHandler(async (req, res) => {
             "orderedBy": _id
             
         }).save();
-        res.json(newCart);
+        res.status(200).json(newCart);
         }
      
     }
@@ -425,7 +463,7 @@ const getUserCart = asyncHandler(async(req, res) => {
     console.log(_id);
     try {
         const user =await   Cart.findOne({ "orderedBy": _id }).populate("products.product", "_id title price");
-        res.json(user)
+        res.status(200).json(user)
      }
     catch (error) {
         console.error(error);
@@ -439,11 +477,15 @@ const emptyCart = asyncHandler(async (req, res) => {
     try {
         const user = await User.findById(_id);
         const cart = await Cart.findOneAndDelete({ "orderedBy": _id });
-        res.json(cart);
+         if (!cart) {
+            return res.status(404).json({ message: "No cart found for this user" });
+        }
+        res.status(200).json(cart);
         
         
     }
     catch (error) {
+        // console.log("good")
         throw new Error(error);
     }
 })
@@ -454,6 +496,7 @@ const applyCoupon = asyncHandler(async (req, res) => {
     const validCoupon = await Coupon.findOne({name: coupon})
     if (!validCoupon)
     {
+        res.status(404)
         throw new Error("Invalid Coupon")
     }
     const user = await User.findOne({ _id });
@@ -463,7 +506,7 @@ const applyCoupon = asyncHandler(async (req, res) => {
         totalAfterDiscount
     },{new: true}
     )
-    res.json(couponedCart);
+    res.status(200).json(couponedCart);
     
 
 
@@ -482,6 +525,23 @@ const createOrder = asyncHandler(async (req, res) => {
         const user = await User.findById(_id);
         const userCart = await Cart.findOne({ orderedBy: user._id });
         const finalAmount = userCart.totalAfterDiscount;
+        
+        const productLessThancart = await Promise.all(userCart.products.map(async(item) => {
+            const isAvailable = await Product.findOne({ _id: item.product });
+           
+            if (isAvailable.quantity < item.count) {
+                return ([item.product, isAvailable.quantity])
+                
+            }
+            return null;
+        }))
+        const filteredProductLessThancart = productLessThancart.filter(item => item !== null);
+        if (filteredProductLessThancart.length > 0) {
+            const quantities = filteredProductLessThancart.join('\n');
+            // console.log(quantities);
+            res.status(409)
+            throw new Error(`The remaining quantity is ${quantities}`)
+        }
         const newOrder = await Order.create({
             products: userCart.products,
             paymentIntent: {
@@ -504,8 +564,8 @@ const createOrder = asyncHandler(async (req, res) => {
                 }
             }
         })
-        const updated = await Product.bulkWrite(update, {})
-        res.json({
+        await Product.bulkWrite(update, {})
+        res.status(200).json({
             message: "success"
         })
 
@@ -525,8 +585,12 @@ const getOrders = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     validateMongoDbId(_id);
     try {
-        const userOrders = await Order.find({ orderBy: _id }).populate('products.product');
-        res.json(userOrders)
+       
+        const userOrders1 = await Order.find({ orderBy: _id })//.populate('products.product');
+        const userOrders = await Order.find({ orderBy: _id }).populate('products.product', "title -_id");
+       
+
+        res.status(200).json(userOrders);
         
     }
     catch (error) {
@@ -547,7 +611,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             status: status,
         }
     }, { new: true });
-    res.json(findOrder)
+    res.status(200).json(findOrder)
     }
     catch (error) {
         console.error(error);

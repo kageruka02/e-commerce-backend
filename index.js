@@ -13,6 +13,10 @@ const brandRouter = require('./routes/brandRoute');
 const couponRouter = require('./routes/couponRoute');
 const cookieParser = require('cookie-parser');
 const morgan = require("morgan");
+const swaggerUI = require('swagger-ui-express')
+const YAML = require('yamljs');
+const swaggerJsDocs = YAML.load('./index.yaml')
+
 
 
 
@@ -32,6 +36,7 @@ app.listen(PORT, () => {
         console.error("Failed to start server: ", error);
     }
 }
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerJsDocs))  
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());

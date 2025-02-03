@@ -16,20 +16,34 @@ const authMiddleWare = asyncHandler(async (req, res, next) => {
             
         }
         catch (error) {
-            throw new Error("Not Authorized token expires, please login again");
+            res.status(401)
+            throw new Error("Not Authorized token expires, please login again or is invalid");
         }
         
     }
     else {
-        throw new Error(" There is no token attacked to header")
+        res.status(401)
+        throw new Error(" There is no token attacked to header or  make sure you add Bearer before")
     }
 })
 const isAdmin = asyncHandler(async (req, res, next) => {
     if (req.user.role !== 'admin') {
+        res.status(401)
         throw new Error("You are not the admin");
     }
     else {
         next();
     }
 })
-module.exports = { authMiddleWare, isAdmin };
+
+const isBlocked = asyncHandler(async (req, res, next) => {
+    if (req.user.isBlocked) {
+        res.status(401)
+    throw new Error("you have been temporarily Blocked");
+    }
+    else {
+        next();
+    }
+    
+})
+module.exports = { authMiddleWare, isAdmin, isBlocked };
