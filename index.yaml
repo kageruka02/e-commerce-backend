@@ -1340,12 +1340,105 @@ paths:
       tags: [Blog Category]
       responses:
         200:
-          description: Got all Product Category
+          description: Got all Blog Category
+        '500':
+          description: Internal server error
+  
+  #Brand Category
+    
+
+  
+  /api/brand:
+    post:
+      summary: Create brand
+      description: api brand
+      tags: [Brand]
+      security:
+          - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                title:
+                  type: string
+                  example: "Samsung"
+      responses:
+        201:
+          description: created brand
+        '401':
+          description: Unauthorized - User is not authenticated
         '500':
           description: Internal server error
     
+    get:
+      summary: Get all brands
+      description: no need for authentication
+      tags: [Brand]
+      responses:
+        200:
+          description: Got all brands
+        '500':
+          description: Internal server error
+  /api/brand/{id}:
+    put:
+      summary: Update  brand Name
+      description: Endpoint to edit brand name
+      tags: [Brand]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                title:
+                  type: string
+                  example: "Samsung"
+      responses:
+        200:
+          description: Edited successfully
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
 
+    delete:
+      summary: delete brand
+      description: require authentication to delete brand
+      tags: [Brand]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      responses:
+        204:
+          description: deleted successfully
+        500:
+          description: internal server Error
 
+    get:
+      summary: Get specific brand
+      description: no authentication required
+      parameters:
+        - in : path
+          name: id
+          required: true
+      tags: [Brand]
+      responses:
+        200:
+          description: Got all Brand
+        '500':
+          description: Internal server error
     
               
 
