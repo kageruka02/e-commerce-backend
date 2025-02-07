@@ -1152,6 +1152,109 @@ paths:
           description: Internal server error
         '409':
           description: User already disliked
+
+    #product category
+  /api/Pcategory:
+    post:
+      summary: Create product Category
+      description: api post category
+      tags: [Product Category]
+      security:
+          - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                title:
+                  type: string
+                  example: "Phones"
+      responses:
+        201:
+          description: created product Category
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+    
+    get:
+      summary: Get all products Categories
+      description: no need for authentication
+      tags: [Product Category]
+      responses:
+        200:
+          description: Got all products Categories
+        '500':
+          description: Internal server error
+    
+  
+      
+  /api/Pcategory/{id}:
+    put:
+      summary: Update  products Category
+      description: Endpoint to edit Product category
+      tags: [Product Category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                title:
+                  type: string
+                  example: "Phones"
+      responses:
+        200:
+          description: Edited successfully
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: delete Category
+      description: require authentication to delete product Category
+      tags: [Product Category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      responses:
+        204:
+          description: deleted successfully
+        500:
+          description: internal server Error
+
+    get:
+      summary: Get specific product Category
+      description: no authentication required
+      parameters:
+        - in : path
+          name: id
+          required: true
+      tags: [Product Category]
+      responses:
+        200:
+          description: Got all Product Category
+        '500':
+          description: Internal server error
+    
+              
+
+  
+
+
+ 
   
   
 

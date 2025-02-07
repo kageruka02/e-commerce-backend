@@ -7,7 +7,7 @@ const validateMongoDbId = require('../utils/validateMongodbId');
 const createCategory = asyncHandler(async (req, res) => {
     try {
         const newCategory = await ProductCategory.create(req.body);
-        res.json(newCategory);
+        res.status(201).json(newCategory);
     }
     catch (error) {
         throw new Error(error);
@@ -17,7 +17,7 @@ const createCategory = asyncHandler(async (req, res) => {
 const getAllCategories = asyncHandler(async (req, res) => {
     try {
         const categories = await ProductCategory.find(req.query);
-        res.json(categories);
+        res.status(200).json(categories);
         
     }
     catch (error) {
@@ -30,7 +30,7 @@ const getAcategory = asyncHandler(async (req, res) => {
         const { id } = req.params
         validateMongoDbId(id);
         const category = await ProductCategory.findById(id)
-        res.json(category);
+        res.status(200).json(category);
         
     }
     catch (error) {
@@ -44,7 +44,7 @@ const updateCategory = asyncHandler(async (req, res) => {
         const { id } = req.params;
         validateMongoDbId(id);
         const updatedCategory = await ProductCategory.findByIdAndUpdate(id, req.body, { new: true });
-        res.json(updatedCategory);
+        res.status(200).json(updatedCategory);
     }
     catch (error) {
         throw new Error(error);
@@ -56,7 +56,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
     validateMongoDbId(id)
     try {
         const deletedCategory = await ProductCategory.findByIdAndDelete(id);
-        res.json(deletedCategory);
+        res.status(204).json(deletedCategory);
         
     }
     catch (error) {
