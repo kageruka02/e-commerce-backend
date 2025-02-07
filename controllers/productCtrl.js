@@ -120,7 +120,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
     try {
         const userFound = await Product.findByIdAndDelete(id);
-        res.json(userFound)
+        res.status(204).json({ message: "deleted Successfully" });
     }
     catch (error) {
         throw new Error(error);

@@ -5,10 +5,17 @@ const validateMongoDbId = require('../utils/validateMongodbId');
 const LikesAndDislikes = require('../models/LikeandDislike');
 
 const createBlog = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id)
     try {
         const newBody = filterPost(req.body);
+        const blogCreator = await User.findById(_id);
+        if (!blogCreator) {
+            throw new Error("Internal server problem")
+        }
+        newBody.author = _id
         const blog = await Blog.create(newBody);
-        res.json(blog);
+        return res.status(201).json(blog);
         
     }
     catch (error) {
@@ -25,7 +32,9 @@ const updateBlog = asyncHandler(async (req, res) => {
         const filteredUpdate = filterPost(req.body);
         console.log(filteredUpdate);
         const updatedBlog = await Blog.findByIdAndUpdate(id, filteredUpdate, { new: true });
-        res.json(updatedBlog);
+        if (!updatedBlog) throw new Error("Failed to update the blog");
+        if (updatedBlog)  return res.status(200).json({...filteredUpdate, "message": "Updated successfully"});
+        
     }
     catch (error) {
         throw new Error(error);
@@ -50,7 +59,7 @@ const getBlog = asyncHandler(async (req, res) => {
 const getAllBlogs = asyncHandler(async (req, res) => {
     try {
         const allBlogs = await Blog.find();
-        res.json(allBlogs);
+        res.status(200).json(allBlogs);
         
     }
     catch (error) {
@@ -63,7 +72,8 @@ const deleteBlog = asyncHandler(async (req, res) => {
     validateMongoDbId(id)
     try {
         const deletedBlog = await Blog.findByIdAndDelete(id);
-        res.json(deletedBlog)
+        if (!deletedBlog) throw new Error("Blog not found");
+        res.status(204).json({ "message": "deleted successfully" })
     }
     catch (error) {
         throw new Error(error);
@@ -84,7 +94,7 @@ const likeBlog = asyncHandler(async (req, res) => {
             
         }
         else if (blogLikedorDisliked.status){
-            res.json({ "message": "The document is already liked" });
+            return res.status(409).json({ "message": "The document is already liked" });
         }
         
     }
@@ -97,9 +107,9 @@ const likeBlog = asyncHandler(async (req, res) => {
     const numLiked = await LikesAndDislikes.countDocuments({ blogId, status: true });
     const numDislikes = await LikesAndDislikes.countDocuments({ blogId, status: false });
     const blog = await Blog.findByIdAndUpdate(blogId, {numLiked: numLiked, numDislikes: numDislikes}, {new: true});
-    res.json(blog)
+        res.status(200).json({ ...blog.toObject(), "message": "success" })
     }
-    catch (e) {
+    catch (error) {
         throw new Error(error);
     }
    
@@ -132,9 +142,9 @@ const dislikeBlog = asyncHandler(async (req, res) => {
         const numDislikes = await LikesAndDislikes.countDocuments({ blogId, status: false });
         const blog = await Blog.findByIdAndUpdate(blogId, {numLiked: numLiked, numDislikes: numDislikes}, {new: true});
         
-        res.json(blog);
+        res.status(200).json({ ...blog.toObject(), "message": "success" })
     }
-    catch (e) {
+    catch (error) {
         throw new Error(error);
     }
         
@@ -158,8 +168,13 @@ module.exports = {createBlog, updateBlog, getBlog, getAllBlogs, deleteBlog, like
 
 const filterPost = (newPost) => {
     
-    const disallowed = ["numViews", "numLiked", "numDislikes"]
-    disallowed.forEach((e) =>  delete newPost[e])
+    const disallowed = ["numViews", "numLiked", "numDislikes", "image", "author"]
+    disallowed.forEach((e) => {
+        if (newPost[e]) {
+            delete newPost[e];
+        }
+     
+    })
     return newPost
 }
 

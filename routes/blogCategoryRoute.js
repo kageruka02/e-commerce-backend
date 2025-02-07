@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const asyncHandler = require('express-async-handler');
 const { authMiddleWare, isAdmin } = require('../middlewares/authMiddleware');
 const { createBlogCategory, updateBlogCategory, deleteBlogCategory, getAllBlogCategories, getBlogcategory } = require('../controllers/blogCatCtrl');
 

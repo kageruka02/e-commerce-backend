@@ -14,9 +14,48 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Blog:
+      type: object
+      required:
+        - title
+        - description
+        - category
+      properties:
+        title:
+          type: string
+          example: "Understanding JavaScript Closures"
+        description:
+          type: string
+          example: "This blog explains how closures work in JavaScript."
+        category:
+          type: string
+          example: "Programming"
+        numViews:
+          type: integer
+          default: 0
+        numLiked:
+          type: integer
+          default: 0
+        numDislikes:
+          type: integer
+          default: 0
+        image:
+          type: string
+          default: "https://www.dreamstime.com/blogging-blog-concepts-ideas-worktable-blogging-blog-concepts-ideas-white-worktable-image110423482"
+      example:
+        title: "Understanding JavaScript Closures"
+        description: "This blog explains how closures work in JavaScript."
+        category: "Programming"
+        numViews: 0
+        numLiked: 0
+        numDislikes: 0
+        image: "https://www.dreamstime.com/blogging-blog-concepts-ideas-worktable-blogging-blog-concepts-ideas-white-worktable-image110423482"
+        author: "John Doe"
 
 
 
+#user section
 paths:
   /api/user/register:
     post:
@@ -729,6 +768,9 @@ paths:
           description: Unauthorized - Token is missing or invalid.
         500:
           description: Internal server error.
+
+        #product section
+
   /api/product/:
     post:
       summary: Creating a product
@@ -842,6 +884,28 @@ paths:
           description: Unauthorized - Token is missing or invalid
         500:
           description: Internal server error
+    delete:
+      summary: delete product
+      description: Delete product from the list of products
+      tags: [Product]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the product to delete
+          schema:
+            type: string
+      responses:
+        204:
+          description: product deleted
+        401:
+          description: Unauthorized - Token is missing or invalid
+        500:
+          description: Internal server Error
+      
+            
   /api/product/addToWishlist:
     put:
       summary: Add or remove a product from the wishlist
@@ -939,4 +1003,155 @@ paths:
           401:
             description: Unauthorized - Token is missing or invalid.
           500:
-            description: internal server Error     
+            description: internal server Error
+
+#Blog section
+
+
+  /api/blog/:
+    post:
+      summary: Create blog about Products
+      description: Endpoint to create a new blog post
+      tags: [Blog]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blog'
+      responses:
+        '201':
+          description: Blog post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blog'
+        '400':
+          description: Bad request, invalid input data
+        '500':
+          description: Internal server error
+    
+    get:
+      summary: Get all blogs
+      description: no need for authentication
+      tags: [Blog]
+      responses:
+        200:
+          description: Got all posts
+        '500':
+          description: Internal server error
+
+  /api/blog/{id}:        
+    put:
+      summary: Update Blog products
+      description: Endpoint to edit blog Products
+      tags: [Blog]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blog'
+      responses:
+        '400':
+          description: Bad request, invalid input data
+        '500':
+          description: Internal server error
+        '200':
+          description: Blog updated
+    get:
+      summary: Get specific product
+      description: no authentication required
+      parameters:
+        - in : path
+          name: id
+          required: true
+      tags: [Blog]
+      responses:
+        200:
+          description: Got all posts
+        '500':
+          description: Internal server error
+    delete:
+      summary: delete Blog
+      description: require authentication to delete blog
+      tags: [Blog]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      responses:
+        204:
+          description: deleted successfully
+        500:
+          description: internal server Error
+      
+      
+
+  /api/blog/likes:
+    put:
+      summary: User likes the blog
+      description:  Allows an authenticated user to like a blog post. If the user previously disliked it, it will be updated to liked.
+      tags: [Blog]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blogId:
+                  type: string
+                  description: The ID of the blog post to like
+                  example: "64c72ef153207c74b8f5b97"
+      responses:
+        '200':
+          description: Successfully liked the blog post
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+        '409':
+          description: Blog already liked
+  
+  /api/blog/dislikes:
+    put:
+      summary: User dislikes the blog
+      description:  Allows an authenticated user to dislike a blog post. If the user previously liked it, it will be updated to disliked.
+      tags: [Blog]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blogId:
+                  type: string
+                  description: The ID of the blog post to dislike
+                  example: "64c72ef153207c74b8f5b97"
+      responses:
+        '200':
+          description: Successfully disliked the blog post
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+        '409':
+          description: User already disliked
+  
+  
+
