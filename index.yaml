@@ -1248,6 +1248,104 @@ paths:
           description: Got all Product Category
         '500':
           description: Internal server error
+
+
+          #Blog Category
+
+  /api/Bcategory:
+    post:
+      summary: Create Blog Category
+      description: api Blog category
+      tags: [Blog Category]
+      security:
+          - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                title:
+                  type: string
+                  example: "Commercial"
+      responses:
+        201:
+          description: created Blog Category
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+    
+    get:
+      summary: Get all Blog Categories
+      description: no need for authentication
+      tags: [Blog Category]
+      responses:
+        200:
+          description: Got all blog Categories
+        '500':
+          description: Internal server error
+  /api/Bcategory/{id}:
+    put:
+      summary: Update  blog Category
+      description: Endpoint to edit blog category
+      tags: [Blog Category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                title:
+                  type: string
+                  example: "commercial"
+      responses:
+        200:
+          description: Edited successfully
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: delete Blog Category 
+      description: require authentication to delete product Category
+      tags: [Blog Category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      responses:
+        204:
+          description: deleted successfully
+        500:
+          description: internal server Error
+
+    get:
+      summary: Get specific Blog Category
+      description: no authentication required
+      parameters:
+        - in : path
+          name: id
+          required: true
+      tags: [Blog Category]
+      responses:
+        200:
+          description: Got all Product Category
+        '500':
+          description: Internal server error
+    
+
+
     
               
 
