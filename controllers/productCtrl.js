@@ -19,17 +19,15 @@ const createProduct = asyncHandler(async(req, res) => {
                 category,
                 brand,
                 quantity,
-                images,
                 color,
-                ratings // An array of ratings, each containing 'star' and 'postedBy'
         } = req.body;
         if (!slug) {
             slug = slugify(title);
         }
         const newProduct = await Product.create({
-        title, slug, description, category, brand, quantity, images, color, ratings, price, createdBy : req.user.id 
+        title, slug, description, category, brand, quantity, color,  price, createdBy : req.user.id 
         })
-        res.json(newProduct);
+        res.status(200).json(newProduct);
     }
     catch (error) {
         throw new Error(error);
@@ -93,7 +91,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
         }
         console.log(page, limit, skip);
         query = await query;
-        res.json(query)
+        res.status(200).json(query)
 
     }
     catch (error) {
@@ -153,14 +151,14 @@ const addtoWishList = asyncHandler(async (req, res) => {
             let user = await User.findByIdAndUpdate(_id, {
                 $pull: {wishlist: productId}
             }, { new: true })
-            res.json(user);
+            res.status(200).json(user);
         }
         else {
             console.log("okay");
             let user = await User.findByIdAndUpdate(_id, {
                 $push: {wishlist:productId}
             }, { new: true })
-            res.json(user);
+            res.status(200).json(user);
         }
 
     }
@@ -171,10 +169,17 @@ const addtoWishList = asyncHandler(async (req, res) => {
 })
 //user rating the product
 const rating = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
+        const { _id } = req.user;
     const { star, productId, comment } = req.body;
+    validateMongoDbId(_id)
+    validateMongoDbId(productId)
+   
     try {
+     
         const product = await Product.findById(productId);
+        if (!product) {
+             res.status(400).json({message: "Invalid product"})
+        }
     const alreadyRated = product.ratings.find((postRating) => postRating.postedBy.toString() === _id.toString());
     if (alreadyRated) {
 
@@ -211,7 +216,7 @@ const rating = asyncHandler(async (req, res) => {
     const actualRating = Math.round(ratingSum / totalRaters);
     productRate.totalratings = actualRating.toString();
     const finalProduct = await productRate.save();
-    res.json(finalProduct);
+    res.status(200).json(finalProduct);
         
     }
     catch (error) {
@@ -225,6 +230,7 @@ const rating = asyncHandler(async (req, res) => {
 const logUploadedImg = asyncHandler(async (req, res) => {
     const { id } = req.params;
     validateMongoDbId(id);
+    console.log(id);
     try {
         const uploader = (path) => cloudinaryUploadImg(path, "images");
         const urls = [];

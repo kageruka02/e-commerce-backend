@@ -179,16 +179,20 @@ const updateUser = asyncHandler(async (req, res) => {
         const allowedUpdates = ['firstName', 'lastName', 'email', 'mobile']
         let isUpdated = false;
         allowedUpdates.forEach(function (key) {
-            if (req.body[key] !== user[key]) {
+            if (req.body[key]) {
+                 if (req.body[key] !== user[key]) {
                 isUpdated = true;
                 user[key] = req.body[key];
             }
+                
+            }
+           
         })
         
         if (isUpdated) {
             const updateUser = await user.save();
             console.log("where is exactly error");
-        res.status(200).json({"firstName":updatedUser.firstName, "lastName": updateUser.lastName, "email": updateUser.email, "mobile": updateUser.mobile}) 
+        res.status(200).json({"firstName":updateUser.firstName, "lastName": updateUser.lastName, "email": updateUser.email, "mobile": updateUser.mobile}) 
         }
         else {
             res.status(400).json({ 'message': "nothing to update"})
@@ -197,6 +201,7 @@ const updateUser = asyncHandler(async (req, res) => {
 
     }
     catch (error) {
+        console.log(error);
         throw new Error("failed to update");
     }
     
@@ -246,17 +251,17 @@ const updatePassword = asyncHandler(async (req, res) => {
     try {
         const user = await User.findById(_id);
      if (!user) {
-            return res.status(404).json({ "message": "User not found" });
+           return   res.status(404).json({ "message": "User not found" });
         }
     if (await user.isPasswordMatching(password)) {
-      res.status(400).json({"message" : "the password is not changing"})
+      return res.status(400).json({"message" : "the password is not changing"})
     }
 
     if (password) {
         user.password = password;
         const updatedPasswordUser = await user.save();
         console.log(updatedPasswordUser);
-        res.status(200).json(updatedPasswordUser);
+        return res.status(200).json(updatedPasswordUser);
     }
     }
     catch (error) {

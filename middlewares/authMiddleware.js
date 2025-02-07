@@ -9,6 +9,7 @@ const authMiddleWare = asyncHandler(async (req, res, next) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET); // id was the one put in jwt.sign
             // console.log(decoded);
+            // console.log(token);
             const user = await User.findById(decoded?.id);
             req.user = user; // this makes this available to other following middlewares
 
@@ -17,6 +18,7 @@ const authMiddleWare = asyncHandler(async (req, res, next) => {
         }
         catch (error) {
             res.status(401)
+            console.log("Authorization header:", req.headers.authorization);
             throw new Error("Not Authorized token expires, please login again or is invalid");
         }
         

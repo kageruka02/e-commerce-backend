@@ -40,20 +40,21 @@ const productImgResize = asyncHandler(async (req, res, next) => {
     try {
          const { id } = req.params;
         const findProduct = await Product.findOne({ _id: id }); 
-        // console.log(req.files);
+        console.log(req.files);
     if (!req.files) return next();
     let duplicates = [];
     await Promise.all(
         req.files.map(async (file) => {
-            const isDuplicate =  await checkForDuplicates(file.path, findProduct);
-            // console.log(isDuplicate);
+            const isDuplicate = await checkForDuplicates(file.path, findProduct);
+            const outputPath = path.join(__dirname, "../public/images/products", file.filename);
+            console.log("good");
             if (!isDuplicate) {
                 await sharp(file.path)
                 .resize(300, 300)
                 .toFormat('jpeg')
                 .jpeg({ quality: 90 })
-                .toFile(`public/images/products/${file.filename}`)
-                fs.unlinkSync(`public/images/products/${file.filename}`);
+                .toFile(outputPath)
+                fs.unlinkSync(outputPath);
             }
             else {
                 fs.unlinkSync(file.path);

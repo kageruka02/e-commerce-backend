@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/register', createUser);
 router.post('/login',login);
-router.post('/forgort-password-token', forgotPasswordToken);
+router.post('/forgot-password-token', forgotPasswordToken);
 router.post('/admin-login', loginAdmin);
 router.post('/cart', authMiddleWare,isBlocked, userCart);
 router.post('/cart/applyCoupon', authMiddleWare, isBlocked,isAdmin, applyCoupon);
