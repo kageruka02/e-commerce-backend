@@ -24,6 +24,7 @@ const authMiddleWare = asyncHandler(async (req, res, next) => {
         
     }
     else {
+        console.log(req.headers.authorization);
         res.status(401)
         throw new Error(" There is no token attacked to header or  make sure you add Bearer before")
     }

@@ -1440,6 +1440,107 @@ paths:
         '500':
           description: Internal server error
     
+                #Coupon 
+   
+  /api/coupon:
+    post:
+      summary: Create coupon
+      description: api coupon 
+      tags: [Coupon]
+      security:
+          - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                name:
+                  type: string
+                  example: "breadCoupons"
+                  uniqueItems: true
+                expiry:
+                  type: string
+                  format: date-time
+                  example: "2025-12-31T23:59:59Z"
+                discount:
+                  type: string
+                  example: "20%" 
+      responses:
+        201:
+          description: created brand
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+    
+    get:
+      summary: Get all available coupons
+      description: Only authenticated users
+      tags: [Coupon]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Got all Coupons
+        '500':
+          description: Internal server error
+        '401':
+          description: unauthorized
+  /api/coupon/{id}:
+    put:
+      summary: Update  coupon Name
+      description: Endpoint to edit coupon name
+      tags: [Coupon]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                name:
+                  type: string
+                  example: "breadCoupons"
+                  uniqueItems: true
+                expiry:
+                  type: string
+                  format: date-time
+                  example: "2025-12-31T23:59:59Z"
+                discount:
+                  type: string
+                  example: "20%" 
+      responses:
+        200:
+          description: Edited successfully
+        '401':
+          description: Unauthorized - User is not authenticated
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: delete coupon
+      description: require authentication to delete coupon
+      tags: [Coupon]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+      responses:
+        204:
+          description: deleted successfully
+        500:
+          description: internal server Error
+
+    
               
 
   
