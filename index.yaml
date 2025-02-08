@@ -257,6 +257,7 @@ paths:
                 password:
                   type: string
                   example: '123567newSecurePassword123!'
+                  description: Put your token here
       parameters:
         - in: path
           name: token

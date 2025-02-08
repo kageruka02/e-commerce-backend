@@ -282,7 +282,16 @@ const forgotPasswordToken = asyncHandler(async (req, res) => {
         const token = await user.createPasswordResetToken();
         console.log(token);
         await user.save();
-        const resetUrl = `Hi, please follow this link to reset your password. This link is valid till 10 minutes for now, <a href='http://localhost:5000/api/user/reset-password/${token}' >click Here</a>`
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        
+// Detect if the request is coming from Swagger UI
+        const isSwagger = req.get("Referer") && req.get("Referer").includes("/api-docs");
+
+// Set the reset link based on the environment
+        const resetLink = isSwagger  ? `${baseUrl}/api-docs/#/User/put_api_user_reset_password__token_`  // Redirect to Swagger UI
+    : `${baseUrl}/api/user/reset-password/${token}`; // Default reset link
+       
+        const resetUrl = `Hi, please follow this link to reset your password. This link is valid till 10 minutes for now, <a href='${resetLink}' >click Here</a>`
         const data = {
             to: email,
             text: "Hey User",
