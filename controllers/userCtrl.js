@@ -594,7 +594,7 @@ const createOrder = asyncHandler(async (req, res) => {
     
 })
 
-
+ //admin to get the list of all placed orders
 const getOrders = asyncHandler(async (req, res) => {
     const { _id } = req.user;
     validateMongoDbId(_id);
